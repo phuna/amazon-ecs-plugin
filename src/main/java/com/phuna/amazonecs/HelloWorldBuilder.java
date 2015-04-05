@@ -13,9 +13,17 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
 
+import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.StartTaskRequest;
+import com.amazonaws.services.ecs.model.StartTaskResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.servlet.ServletException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,9 +47,11 @@ import java.util.logging.Logger;
 public class HelloWorldBuilder extends Builder {
 	
 	private static final Logger log = Logger.getLogger(HelloWorldBuilder.class.getName());
+	private AmazonECSClient client;
+    private String clusterName;
 	
 	static {
-		log.log(Level.FINE, "*** Hello world builder started ***");
+		log.warning("*** Hello world builder started ***");
 	}
 
     private final String name;
@@ -50,6 +60,7 @@ public class HelloWorldBuilder extends Builder {
     @DataBoundConstructor
     public HelloWorldBuilder(String name) {
         this.name = name;
+        
     }
 
     /**
@@ -68,8 +79,41 @@ public class HelloWorldBuilder extends Builder {
         if (getDescriptor().getUseFrench())
             listener.getLogger().println("Bonjour, "+name+"!");
         else
-            listener.getLogger().println("Hello abc, "+name+"!");
+            listener.getLogger().println("Hello abc efg ijk aaa bbb ccc ddd xxx, "+name+"!");
+        
+        // Test ECS
+        ecsSetup();
+        final StartTaskRequest request = new StartTaskRequest();
+        request.setCluster(clusterName);
+        request.setTaskDefinition("arn:aws:ecs:us-west-2:227917407484:task-definition/sleep360:1");
+        List<String> containerInstances = new ArrayList<String>();
+        containerInstances.add("9cd3a486-85b8-4e13-beac-e6b8d63529d6");
+        request.setContainerInstances(new ArrayList<String>(containerInstances));
+        log.warning("ECS client to perform task = " + this.client);
+        final StartTaskResult result = this.client.startTask(request);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+        	log.info(mapper.writeValueAsString(result));
+		} catch (JsonProcessingException e) {
+			log.info(e.getMessage());
+		}
+        
         return true;
+    }
+    
+    private void ecsSetup() {
+    	this.client = new AmazonECSClient();
+        String endpoint = System.getenv("AWS_ECS_ENDPOINT");
+        if (endpoint == null || "".equals(endpoint)) {
+            endpoint = "https://ecs.us-west-2.amazonaws.com";
+        }
+        client.setEndpoint(endpoint);
+        String cluster = System.getenv("AWS_ECS_CLUSTER");
+        if (cluster == null || "".equals(cluster)) {
+            cluster = "default";
+        }
+        this.clusterName = cluster;
+        log.warning("HelloWorldBuilder initialized, ecs client = " + this.client);
     }
 
     // Overridden for better type safety.
