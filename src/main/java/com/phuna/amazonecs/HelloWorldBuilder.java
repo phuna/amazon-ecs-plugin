@@ -60,7 +60,7 @@ public class HelloWorldBuilder extends Builder {
     @DataBoundConstructor
     public HelloWorldBuilder(String name) {
         this.name = name;
-        
+        log.warning("*** HelloWorldBuilder constructor ***");
     }
 
     /**
