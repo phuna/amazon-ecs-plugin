@@ -6,14 +6,12 @@ import hudson.slaves.DelegatingComputerLauncher;
 import hudson.slaves.SlaveComputer;
 
 import java.io.IOException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 
 public class RetryingComputerLauncher extends DelegatingComputerLauncher {
 
-    private static final Logger log = LoggerFactory.getLogger(RetryingComputerLauncher.class);
+    private static final Logger logger = Logger.getLogger(RetryingComputerLauncher.class.getName());
 
     /**
      * time (ms) to back off between retries?
@@ -32,7 +30,7 @@ public class RetryingComputerLauncher extends DelegatingComputerLauncher {
     @Override
     public void launch(SlaveComputer computer, TaskListener listener) throws IOException, InterruptedException {
         if (hasTried) {
-            log.info("Launch failed, pausing before retry.");
+            logger.info("Launch failed, pausing before retry.");
             Thread.sleep(pause);
         }
         super.launch(computer, listener);

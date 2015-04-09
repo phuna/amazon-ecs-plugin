@@ -14,7 +14,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jenkinsci.plugins.durabletask.executors.OnceRetentionStrategy;
@@ -23,11 +22,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.StartTaskRequest;
-import com.amazonaws.services.ecs.model.StartTaskResult;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.dockerjava.api.command.InspectContainerResponse;
 
 public class EcsTaskTemplate {
     private static final Logger logger = Logger.getLogger(EcsTaskTemplate.class.getName());

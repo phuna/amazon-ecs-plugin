@@ -1,10 +1,19 @@
 package com.phuna.amazonecs;
 
+import hudson.Extension;
+import hudson.model.Computer;
+import hudson.model.Descriptor;
+import hudson.model.Label;
+import hudson.model.Node;
+import hudson.slaves.Cloud;
+import hudson.slaves.NodeProvisioner;
+import hudson.slaves.NodeProvisioner.PlannedNode;
+import hudson.util.StreamTaskListener;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,18 +22,7 @@ import jenkins.model.Jenkins;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import com.amazonaws.services.ecs.model.Task;
-import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.google.common.base.Throwables;
-
-import hudson.model.Computer;
-import hudson.model.Label;
-import hudson.model.Node;
-import hudson.model.labels.LabelAtom;
-import hudson.slaves.Cloud;
-import hudson.slaves.NodeProvisioner;
-import hudson.slaves.NodeProvisioner.PlannedNode;
-import hudson.util.StreamTaskListener;
 
 public class EcsCloud extends Cloud {
 
@@ -144,4 +142,47 @@ public class EcsCloud extends Cloud {
 		return null;
 	}
 
+	public String getMyString() {
+		return "Hello Jenkins";
+	}
+	
+	@Extension
+    public static class DescriptorImpl extends Descriptor<Cloud> {
+        @Override
+        public String getDisplayName() {
+            return "Amazon ECS";
+        }
+
+//        public FormValidation doTestConnection(
+//                @QueryParameter URL serverUrl,
+//                @QueryParameter String credentialsId,
+//                @QueryParameter String version
+//                ) throws IOException, ServletException, DockerException {
+//
+//            DockerClientConfig.DockerClientConfigBuilder config = DockerClientConfig
+//                .createDefaultConfigBuilder()
+//                .withUri(serverUrl.toString());
+//
+//            if( !Strings.isNullOrEmpty(version)) {
+//                config.withVersion(version);
+//            }
+//
+//            addCredentials(config, credentialsId);
+//
+//            DockerClient dc = DockerClientBuilder.getInstance(config.build()).build();
+//
+//            Version v = dc.versionCmd().exec();
+//
+//            return FormValidation.ok("Version = " + v.getVersion());
+//        }
+//
+//        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
+//
+//            List<StandardCertificateCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCertificateCredentials.class, context);
+//
+//            return new CredentialsListBoxModel().withEmptySelection()
+//                                                .withMatching(CredentialsMatchers.always(),
+//                                                              credentials);
+//        }
+    }
 }

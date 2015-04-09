@@ -16,9 +16,8 @@
 	<version>1.0-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 
-	<name>TODO Plugin</name>
-	<description>TODO</description>
-	<url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
+	<name>Amazon ECS plugin</name>
+	<description>Allow building on Amazon ECS</description>
 	<licenses>
 		<license>
 			<name>MIT License</name>
@@ -69,11 +68,11 @@
 			<artifactId>durable-task</artifactId>
 			<version>0.5</version>
 		</dependency>
-		<dependency>
+<!-- 		<dependency>
 			<groupId>com.github.docker-java</groupId>
 			<artifactId>docker-java</artifactId>
 			<version>1.0.1-SNAPSHOT</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>org.jenkins-ci.plugins</groupId>
 			<artifactId>ssh-slaves</artifactId>
