@@ -1,9 +1,13 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-  <f:section title="Amazon ECS Cloud">
-    <f:entry title="Test"
-      description="Check if we should say hello in French">
-      <f:checkbox />
-    </f:entry>
-  </f:section>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+	xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
+	xmlns:c="/lib/credentials">
+	<f:entry title="${%Access Key ID}">
+		<f:textbox field="accessKeyId" />
+	</f:entry>
+	<f:entry title="${%Secret Access Key}">
+		<f:password field="secretAccessKey" />
+	</f:entry>
+	<f:validateButton title="${%Test Connection}"
+		progress="${%Testing...}" method="testConnection" with="secretKey,accessId" />
 </j:jelly>

@@ -8,6 +8,7 @@ import hudson.model.Node;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner;
 import hudson.slaves.NodeProvisioner.PlannedNode;
+import hudson.util.FormValidation;
 import hudson.util.StreamTaskListener;
 
 import java.util.ArrayList;
@@ -21,7 +22,10 @@ import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
+import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.google.common.base.Throwables;
 
 public class EcsCloud extends Cloud {
@@ -33,6 +37,30 @@ public class EcsCloud extends Cloud {
 	private String secretAccessKey;
 	private List<EcsTaskTemplate> templates;
 
+	public String getAccessKeyId() {
+		return accessKeyId;
+	}
+
+	public void setAccessKeyId(String accessKeyId) {
+		this.accessKeyId = accessKeyId;
+	}
+
+	public String getSecretAccessKey() {
+		return secretAccessKey;
+	}
+
+	public void setSecretAccessKey(String secretAccessKey) {
+		this.secretAccessKey = secretAccessKey;
+	}
+
+	public List<EcsTaskTemplate> getTemplates() {
+		return templates;
+	}
+
+	public void setTemplates(List<EcsTaskTemplate> templates) {
+		this.templates = templates;
+	}
+
 	@DataBoundConstructor
 	public EcsCloud(String accessKeyId, String secretAccessKey,
 			List<EcsTaskTemplate> templates, String name) {
@@ -43,6 +71,9 @@ public class EcsCloud extends Cloud {
 			this.templates = templates;
 		} else {
 			this.templates = new ArrayList<EcsTaskTemplate>();
+		}
+		for (EcsTaskTemplate template : templates) {
+			template.setParent(this);
 		}
 	}
 
@@ -145,44 +176,34 @@ public class EcsCloud extends Cloud {
 	public String getMyString() {
 		return "Hello Jenkins";
 	}
-	
-	@Extension
-    public static class DescriptorImpl extends Descriptor<Cloud> {
-        @Override
-        public String getDisplayName() {
-            return "Amazon ECS";
-        }
 
-//        public FormValidation doTestConnection(
-//                @QueryParameter URL serverUrl,
-//                @QueryParameter String credentialsId,
-//                @QueryParameter String version
-//                ) throws IOException, ServletException, DockerException {
-//
-//            DockerClientConfig.DockerClientConfigBuilder config = DockerClientConfig
-//                .createDefaultConfigBuilder()
-//                .withUri(serverUrl.toString());
-//
-//            if( !Strings.isNullOrEmpty(version)) {
-//                config.withVersion(version);
-//            }
-//
-//            addCredentials(config, credentialsId);
-//
-//            DockerClient dc = DockerClientBuilder.getInstance(config.build()).build();
-//
-//            Version v = dc.versionCmd().exec();
-//
-//            return FormValidation.ok("Version = " + v.getVersion());
-//        }
-//
-//        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context) {
-//
-//            List<StandardCertificateCredentials> credentials = CredentialsProvider.lookupCredentials(StandardCertificateCredentials.class, context);
-//
-//            return new CredentialsListBoxModel().withEmptySelection()
-//                                                .withMatching(CredentialsMatchers.always(),
-//                                                              credentials);
-//        }
-    }
+	@Extension
+	public static class DescriptorImpl extends Descriptor<Cloud> {
+		@Override
+		public String getDisplayName() {
+			return "Amazon ECS";
+		}
+
+		public FormValidation doTestConnection(
+				@QueryParameter String accessKeyId,
+				@QueryParameter String secretAccessKey) {
+			AmazonECSClient client = Utils.getEcsClient(accessKeyId,
+					secretAccessKey);
+			ListContainerInstancesResult result = client.listContainerInstances();
+
+			return FormValidation.ok("Number of container instances: " + result.getContainerInstanceArns().size());
+		}
+		//
+		// public ListBoxModel doFillCredentialsIdItems(@AncestorInPath
+		// ItemGroup context) {
+		//
+		// List<StandardCertificateCredentials> credentials =
+		// CredentialsProvider.lookupCredentials(StandardCertificateCredentials.class,
+		// context);
+		//
+		// return new CredentialsListBoxModel().withEmptySelection()
+		// .withMatching(CredentialsMatchers.always(),
+		// credentials);
+		// }
+	}
 }
