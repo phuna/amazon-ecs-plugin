@@ -10,4 +10,10 @@
 	</f:entry>
 	<f:validateButton title="${%Test Connection}"
 		progress="${%Testing...}" method="testConnection" with="secretKey,accessId" />
+
+	<f:entry title="${%Task Definition}" description="${%List of task definitions to be launched as slaves}">
+		<f:repeatable field="templates">
+			<st:include page="config.jelly" class="${descriptor.clazz}" />
+		</f:repeatable>
+	</f:entry>
 </j:jelly>

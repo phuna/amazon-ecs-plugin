@@ -36,37 +36,53 @@ public class EcsCloud extends Cloud {
 	private String accessKeyId;
 	private String secretAccessKey;
 	private List<EcsTaskTemplate> templates;
+//	private AmazonECSClient ecsClient;
 
 	public String getAccessKeyId() {
 		return accessKeyId;
 	}
 
 	public void setAccessKeyId(String accessKeyId) {
+		logger.warning("*** setAccessKeyId");
 		this.accessKeyId = accessKeyId;
 	}
 
 	public String getSecretAccessKey() {
+		logger.warning("*** getSecretAccessKey");
 		return secretAccessKey;
 	}
 
 	public void setSecretAccessKey(String secretAccessKey) {
+		logger.warning("*** setSecretAccessKey");
 		this.secretAccessKey = secretAccessKey;
 	}
 
 	public List<EcsTaskTemplate> getTemplates() {
+		logger.warning("*** getTemplates");
 		return templates;
 	}
 
 	public void setTemplates(List<EcsTaskTemplate> templates) {
+		logger.warning("*** setTemplates");
 		this.templates = templates;
 	}
+	
+//	public AmazonECSClient getEcsClient() {
+//		return ecsClient;
+//	}
 
 	@DataBoundConstructor
 	public EcsCloud(String accessKeyId, String secretAccessKey,
 			List<EcsTaskTemplate> templates, String name) {
 		super(name);
+		logger.warning("*** EcsCloud constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
+		
+//		logger.warning("*** Create Ecs Client");
+//		this.ecsClient = Utils.getEcsClient(this.accessKeyId,
+//				this.secretAccessKey);
+		
 		if (templates != null) {
 			this.templates = templates;
 		} else {
@@ -75,6 +91,7 @@ public class EcsCloud extends Cloud {
 		for (EcsTaskTemplate template : templates) {
 			template.setParent(this);
 		}
+
 	}
 
 	@Override
@@ -187,7 +204,7 @@ public class EcsCloud extends Cloud {
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
 				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = Utils.getEcsClient(accessKeyId,
+			AmazonECSClient client = CommonUtils.getEcsClient(accessKeyId,
 					secretAccessKey);
 			ListContainerInstancesResult result = client.listContainerInstances();
 

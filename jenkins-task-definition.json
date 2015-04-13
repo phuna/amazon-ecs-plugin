@@ -1,0 +1,17 @@
+{
+	"family": "jenkins-ecs-slave",
+	"containerDefinitions": [
+        {
+            "name": "jenkins-slave",
+            "image": "phuna/jenkins-slave",
+            "cpu": 50,
+            "memory": 128,
+            "portMappings": [
+                {
+                    "containerPort": 22
+                }
+            ],
+            "essential": true
+        }
+    ]
+}

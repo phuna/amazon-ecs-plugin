@@ -26,15 +26,14 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 
 	@Override
 	public AbstractCloudComputer createComputer() {
-		// TODO Implement
-		return null;
+		return new EcsDockerComputer(this);
 	}
 
 	@Override
 	protected void _terminate(TaskListener listener) throws IOException,
 			InterruptedException {
-		// TODO Auto-generated method stub
-
+		// TODO clean up
+		listener.getLogger().println("*** Cleanup here");
 	}
 
 }
