@@ -208,7 +208,7 @@ public class EcsCloud extends Cloud {
 					secretAccessKey);
 			ListContainerInstancesResult result = client.listContainerInstances();
 
-			return FormValidation.ok("Number of container instances: " + result.getContainerInstanceArns().size());
+			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());
 		}
 		//
 		// public ListBoxModel doFillCredentialsIdItems(@AncestorInPath

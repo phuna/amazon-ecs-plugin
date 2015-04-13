@@ -6,10 +6,10 @@
 		<f:textbox field="accessKeyId" />
 	</f:entry>
 	<f:entry title="${%Secret Access Key}">
-		<f:password field="secretAccessKey" />
+		<f:password field="secretAccessKey"/>
 	</f:entry>
 	<f:validateButton title="${%Test Connection}"
-		progress="${%Testing...}" method="testConnection" with="secretKey,accessId" />
+		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey" />
 
 	<f:entry title="${%Task Definition}" description="${%List of task definitions to be launched as slaves}">
 		<f:repeatable field="templates">
