@@ -5,7 +5,7 @@
             "name": "jenkins-slave",
             "image": "phuna/jenkins-slave",
             "cpu": 50,
-            "memory": 128,
+            "memory": 512,
             "portMappings": [
                 {
                     "containerPort": 22

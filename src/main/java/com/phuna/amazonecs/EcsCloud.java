@@ -24,6 +24,8 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.google.common.base.Throwables;
@@ -36,6 +38,7 @@ public class EcsCloud extends Cloud {
 	private String accessKeyId;
 	private String secretAccessKey;
 	private List<EcsTaskTemplate> templates;
+	private static AWSCredentials awsCredentials;
 //	private AmazonECSClient ecsClient;
 
 	public String getAccessKeyId() {
@@ -67,6 +70,10 @@ public class EcsCloud extends Cloud {
 		this.templates = templates;
 	}
 	
+	public static AWSCredentials getAwsCredentials() {
+		return awsCredentials;
+	}
+	
 //	public AmazonECSClient getEcsClient() {
 //		return ecsClient;
 //	}
@@ -78,6 +85,8 @@ public class EcsCloud extends Cloud {
 		logger.warning("*** EcsCloud constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
+		
+		EcsCloud.awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
 		
 //		logger.warning("*** Create Ecs Client");
 //		this.ecsClient = Utils.getEcsClient(this.accessKeyId,
@@ -204,8 +213,7 @@ public class EcsCloud extends Cloud {
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
 				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = CommonUtils.getEcsClient(accessKeyId,
-					secretAccessKey);
+			AmazonECSClient client = CommonUtils.getEcsClient();
 			ListContainerInstancesResult result = client.listContainerInstances();
 
 			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());

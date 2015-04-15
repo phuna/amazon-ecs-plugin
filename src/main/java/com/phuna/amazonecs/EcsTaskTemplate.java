@@ -173,7 +173,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		request.setTaskDefinition(taskDefinitionArn);
 //		List<String> containerInstances = new ArrayList<String>();
 
-		AmazonECSClient client = CommonUtils.getEcsClient(parent.getAccessKeyId(), parent.getSecretAccessKey());
+		AmazonECSClient client = CommonUtils.getEcsClient();
 		return client.runTask(request);
 	}
 
