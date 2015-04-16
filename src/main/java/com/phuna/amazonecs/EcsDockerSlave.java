@@ -16,7 +16,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 	private static final Logger logger = Logger.getLogger(AWSUtils.class
 			.getName());
 
-	// private EcsTaskTemplate template;
+	private EcsTaskTemplate template;
 	private String taskArn;
 
 	public EcsDockerSlave(EcsTaskTemplate template, String taskArn,
@@ -27,7 +27,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 			throws FormException, IOException {
 		super(taskArn, nodeDescription, remoteFS, numExecutors, mode,
 				labelString, launcher, retentionStrategy, nodeProperties);
-		// this.template = template;
+		this.template = template;
 		this.taskArn = taskArn;
 	}
 
@@ -40,7 +40,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 	protected void _terminate(TaskListener listener) throws IOException,
 			InterruptedException {
 		logger.info("Stop task " + taskArn);
-		AWSUtils.stopTask(taskArn);
+		AWSUtils.stopTask(taskArn, template.getParent().isSameVPC());
 	}
 
 }

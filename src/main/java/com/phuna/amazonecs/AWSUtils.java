@@ -13,9 +13,12 @@ import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
+import com.amazonaws.services.ecs.model.NetworkBinding;
 import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
 import com.amazonaws.services.ecs.model.Task;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container.Port;
 
 public class AWSUtils {
 	private static final Logger logger = Logger.getLogger(AWSUtils.class
@@ -76,6 +79,31 @@ public class AWSUtils {
 			i++;
 		} while (i < Constants.RETRIES);
 		return ctn;
+	}
+	
+	public static int getContainerExternalSSHPort(String taskArn) {
+		DescribeTasksResult dtrr = AWSUtils.describeTasks(taskArn);
+		if (dtrr.getTasks().size() == 0
+				|| dtrr.getTasks().get(0).getContainers().size() == 0) {
+			throw new RuntimeException("No container found for task ARN: "
+					+ taskArn);
+		}
+		Container ctn = dtrr.getTasks().get(0).getContainers().get(0);
+		List<NetworkBinding> nbs = ctn.getNetworkBindings();
+		logger.info("Network binding size = " + nbs.size());
+		int port = -1;
+		for (NetworkBinding nb : nbs) {
+			logger.info("Container's binding: host = " + nb.getBindIP() + ", port = "
+					+ nb.getHostPort());
+			if (nb.getContainerPort() == Constants.SSH_PORT) {
+				port = nb.getHostPort();
+				break;
+			}
+		}
+		if (port == -1) {
+			throw new RuntimeException("Cannot find external mapped port for SSH");
+		}
+		return port;
 	}
 
 	public static DescribeTasksResult describeTasks(String... tasksArn) {
@@ -171,13 +199,41 @@ public class AWSUtils {
 		}
 	}
 	
-	public static void stopTask(String taskArn) {
+	public static void stopTask(String taskArn, boolean sameVPC) {
+		String host = "";
+		if (sameVPC) {
+			host = AWSUtils.getTaskContainerPrivateAddress(taskArn);
+		} else {
+			host = AWSUtils.getTaskContainerPublicAddress(taskArn);
+		}
+		logger.info("Docker host to delete container = " + host);
+		
+		int externalPort = AWSUtils.getContainerExternalSSHPort(taskArn);
+		logger.info("Container's mapped external SSH port = " + externalPort);
+		
+		
 		StopTaskRequest str = new StopTaskRequest();
 		AmazonECSClient client = AWSUtils.getEcsClient();
 		str.setTask(taskArn);
 		client.stopTask(str);
 		
-		// TODO Remove container
-		
+		DockerClient dockerClient = DockerUtils.getDockerClient(host, DockerUtils.DOCKER_PORT);
+		List<com.github.dockerjava.api.model.Container> ctnList = dockerClient.listContainersCmd().exec();
+		com.github.dockerjava.api.model.Container ctn = null;
+		for (com.github.dockerjava.api.model.Container container : ctnList) {
+			Port[] ports = container.getPorts();
+			for (Port port : ports) {
+				if (port.getPublicPort() == externalPort) {
+					ctn = container;
+					break;
+				}
+			}
+		}
+		if (ctn != null) {
+			logger.info("Found container for task: task = " + taskArn + ", container ID = " + ctn.getId());
+			dockerClient.removeContainerCmd(ctn.getId()).exec();
+		} else {
+			logger.warning("Cannot find container of task " + taskArn);
+		}
 	}
 }

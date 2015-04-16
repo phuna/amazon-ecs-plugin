@@ -49,7 +49,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		String taskArn = tasks.get(0).getTaskArn();
 
 		// Find host port for SSH connection
-		int sshPort = 22;
+		int sshPort = Constants.SSH_PORT;
 		int port = -1;
 		String host = "";
 		
@@ -74,7 +74,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		if (host == "" || port == -1) {
 			logger.warning("Failed to connect to the container");
-			AWSUtils.stopTask(taskArn);
+			AWSUtils.stopTask(taskArn, template.getParent().isSameVPC());
 			throw new RuntimeException("Cannot determine host/port to SSH into");
 		}
 
