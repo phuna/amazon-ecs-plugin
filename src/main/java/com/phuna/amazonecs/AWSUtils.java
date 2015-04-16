@@ -210,15 +210,16 @@ public class AWSUtils {
 		
 		int externalPort = AWSUtils.getContainerExternalSSHPort(taskArn);
 		logger.info("Container's mapped external SSH port = " + externalPort);
-		
+
+		DockerClient dockerClient = DockerUtils.getDockerClient(host, DockerUtils.DOCKER_PORT);
+		List<com.github.dockerjava.api.model.Container> ctnList = dockerClient.listContainersCmd().exec();
+		logger.info("Number of running containers = " + ctnList.size());
 		
 		StopTaskRequest str = new StopTaskRequest();
 		AmazonECSClient client = AWSUtils.getEcsClient();
 		str.setTask(taskArn);
 		client.stopTask(str);
 		
-		DockerClient dockerClient = DockerUtils.getDockerClient(host, DockerUtils.DOCKER_PORT);
-		List<com.github.dockerjava.api.model.Container> ctnList = dockerClient.listContainersCmd().exec();
 		com.github.dockerjava.api.model.Container ctn = null;
 		for (com.github.dockerjava.api.model.Container container : ctnList) {
 			Port[] ports = container.getPorts();
@@ -230,8 +231,10 @@ public class AWSUtils {
 			}
 		}
 		if (ctn != null) {
-			logger.info("Found container for task: task = " + taskArn + ", container ID = " + ctn.getId());
-			dockerClient.removeContainerCmd(ctn.getId()).exec();
+			logger.info("Found container for task: task = " + taskArn + ", container ID = " + ctn.getId() + ", container status = " + ctn.getStatus());
+			DockerUtils.waitForContainerExit(dockerClient, ctn.getId());
+			dockerClient.removeContainerCmd(ctn.getId()).withForce().exec();
+			logger.info("Container removed");
 		} else {
 			logger.warning("Cannot find container of task " + taskArn);
 		}

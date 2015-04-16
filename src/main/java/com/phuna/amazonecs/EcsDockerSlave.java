@@ -6,6 +6,7 @@ import hudson.slaves.AbstractCloudComputer;
 import hudson.slaves.AbstractCloudSlave;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.ComputerLauncher;
+import hudson.slaves.OfflineCause;
 import hudson.slaves.RetentionStrategy;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 	@Override
 	protected void _terminate(TaskListener listener) throws IOException,
 			InterruptedException {
+		toComputer().disconnect(null);
 		logger.info("Stop task " + taskArn);
 		AWSUtils.stopTask(taskArn, template.getParent().isSameVPC());
 	}
