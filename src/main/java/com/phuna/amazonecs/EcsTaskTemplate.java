@@ -1,10 +1,10 @@
 package com.phuna.amazonecs;
 
 import hudson.Extension;
-import hudson.model.Descriptor;
-import hudson.model.Descriptor.FormException;
 import hudson.model.Describable;
 import hudson.model.ItemGroup;
+import hudson.model.Descriptor;
+import hudson.model.Descriptor.FormException;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
@@ -29,14 +29,17 @@ import org.jenkinsci.plugins.durabletask.executors.OnceRetentionStrategy;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.Container;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.amazonaws.services.ecs.model.Task;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserListBoxModel;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.google.common.base.Strings;
 import com.trilead.ssh2.Connection;
 
 public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
@@ -46,7 +49,8 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	private String taskDefinitionArn;
 	private String labelString;
 	private EcsCloud parent;
-//	private AmazonECSClient ecsClient;
+	private String remoteFS; // Location on slave used as workspace for Jenkins' slave
+	// private AmazonECSClient ecsClient;
 
 	/**
 	 * The id of the credentials to use.
@@ -55,32 +59,28 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 
 	@DataBoundConstructor
 	public EcsTaskTemplate(String taskDefinitionArn, String labelString,
+			String remoteFS,
 			String credentialsId) {
 		this.taskDefinitionArn = taskDefinitionArn;
 		this.labelString = labelString;
 		this.credentialsId = credentialsId;
-//		logger.warning("*** EcsTaskTemplate constructor");
-//		this.ecsClient = Utils.getEcsClient(parent.getAccessKeyId(),
-//				parent.getSecretAccessKey());
+		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins" : remoteFS;
+		
 	}
 
 	public String getTaskDefinitionArn() {
-		logger.warning("*** getTaskDefinitionArn");
 		return taskDefinitionArn;
 	}
 
 	public void setTaskDefinitionArn(String taskDefinitionArn) {
-		logger.warning("*** setTaskDefinitionArn");
 		this.taskDefinitionArn = taskDefinitionArn;
 	}
 
 	public String getLabelString() {
-		logger.warning("*** getLabelString");
 		return labelString;
 	}
 
 	public void setLabelString(String labelString) {
-		logger.warning("*** setLabelString");
 		this.labelString = labelString;
 	}
 
@@ -103,10 +103,14 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	public void setParent(EcsCloud parent) {
 		this.parent = parent;
 	}
-	
-//	public AmazonECSClient getEcsClient() {
-//		return ecsClient;
-//	}
+
+	public String getRemoteFS() {
+		return remoteFS;
+	}
+
+	public void setRemoteFS(String remoteFS) {
+		this.remoteFS = remoteFS;
+	}
 
 	public int getSSHLaunchTimeoutMinutes() {
 		// TODO Investigate about this later
@@ -131,11 +135,20 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 
 		List<? extends NodeProperty<?>> nodeProperties = new ArrayList();
 
-		// InspectContainerResponse containerInspectResponse = provisionNew();
-		// String containerId = containerInspectResponse.getId();
 		// Start a ECS task, then get task information to pass to
 		// DockerComputerLauncher
 		RunTaskResult result = provisionNew();
+		if (result.getTasks().size() == 0) {
+			// Error occured, no tasks created
+			result.getFailures();
+			for (Failure f : result.getFailures()) {
+				logger.warning(f.getReason());
+			}
+			throw new RuntimeException("Failed to launch task");
+		}
+		if (result.getTasks().get(0).getContainers().size() == 0) {
+			throw new RuntimeException("Task launched but no container found");
+		}
 
 		ComputerLauncher launcher = new EcsDockerComputerLauncher(this, result);
 
@@ -158,22 +171,26 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		// catch(Exception ex) {
 		// logger.warning("Error fetching name of cloud");
 		// }
-
-		return new EcsDockerSlave(this, "slaveName", // slaveName,
-				"nodeDescription", // nodeDescription,
-				"/home/jenkins", // remoteFs,
+		
+		Task t = result.getTasks().get(0);
+		Container ctn = t.getContainers().get(0);
+		logger.info("taskArn = " + ctn.getTaskArn() + ", containerArn = " + ctn.getContainerArn() + ", name = " + ctn.getName());
+		return new EcsDockerSlave(this,
+				t.getTaskArn(), // slaveName,
+				ctn.getContainerArn(), // nodeDescription,
+				this.remoteFS, // remoteFs,
 				numExecutors, // numExecutors,
 				mode, labelString, launcher, retentionStrategy, nodeProperties);
 	}
 
 	public RunTaskResult provisionNew() {
-		logger.warning("parent = " + parent);
+		// logger.warning("parent = " + parent);
+
 		// Use Amazon ECS' default scheduler
 		RunTaskRequest request = new RunTaskRequest();
 		request.setTaskDefinition(taskDefinitionArn);
-//		List<String> containerInstances = new ArrayList<String>();
 
-		AmazonECSClient client = CommonUtils.getEcsClient();
+		AmazonECSClient client = AWSUtils.getEcsClient();
 		return client.runTask(request);
 	}
 

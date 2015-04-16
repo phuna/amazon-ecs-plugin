@@ -2,14 +2,23 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
 	xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
 	xmlns:c="/lib/credentials">
+	
+	<f:entry title="${%Name}">
+		<f:textbox field="name" />
+	</f:entry>
+	
 	<f:entry title="${%Access Key ID}">
 		<f:textbox field="accessKeyId" />
 	</f:entry>
 	<f:entry title="${%Secret Access Key}">
 		<f:password field="secretAccessKey"/>
 	</f:entry>
+	
 	<f:validateButton title="${%Test Connection}"
 		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey" />
+	<f:entry title="${%Same Virtual Private Cloud}">
+		<f:checkbox field="sameVPC" />
+	</f:entry>
 
 	<f:entry title="${%Task Definition}" description="${%List of task definitions to be launched as slaves}">
 		<f:repeatable field="templates">

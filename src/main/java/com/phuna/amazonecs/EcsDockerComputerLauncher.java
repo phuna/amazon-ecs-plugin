@@ -4,24 +4,13 @@ import hudson.plugins.sshslaves.SSHLauncher;
 import hudson.slaves.ComputerLauncher;
 import hudson.slaves.DelegatingComputerLauncher;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.management.RuntimeErrorException;
-
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.Container;
-import com.amazonaws.services.ecs.model.DescribeTasksRequest;
-import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.NetworkBinding;
 import com.amazonaws.services.ecs.model.RunTaskResult;
-import com.amazonaws.services.ecs.model.StartTaskResult;
-import com.amazonaws.services.ecs.model.StopTaskRequest;
-import com.amazonaws.services.ecs.model.StopTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.google.common.base.Preconditions;
@@ -65,7 +54,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		String host = "";
 		
 		// Wait until container's status becomes RUNNING
-		Container ctn = CommonUtils.waitForContainer(taskArn);
+		Container ctn = AWSUtils.waitForContainer(taskArn);
 		if (!ctn.getLastStatus().equals("RUNNING")) {
 			throw new RuntimeException("Container takes too long time to start");
 		}
@@ -73,7 +62,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		List<NetworkBinding> nbs = ctn.getNetworkBindings();
 		logger.info("Network binding size = " + nbs.size());
 		for (NetworkBinding nb : nbs) {
-			logger.warning("host = " + nb.getBindIP() + ", port = "
+			logger.info("Container's binding: host = " + nb.getBindIP() + ", port = "
 					+ nb.getHostPort());
 			if (nb.getContainerPort() == sshPort) {
 				port = nb.getHostPort();
@@ -84,26 +73,24 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		}
 
 		if (host == "" || port == -1) {
-			// Attempt to remove all started tasks if cannot connect to
-			// container
-
-			// TODO put to CommonUtils
-//			for (Task t : tasks) {
-//				StopTaskRequest stopTaskRequest = new StopTaskRequest();
-//				stopTaskRequest.setTask(t.getTaskArn());
-//				client.stopTask(stopTaskRequest);
-//
-//			}
-			logger.info("Stoped all tasks");
+			logger.warning("Failed to connect to the container");
+			AWSUtils.stopTask(taskArn);
 			throw new RuntimeException("Cannot determine host/port to SSH into");
 		}
 
 		// host = "54.187.124.238";
 //		host = "172.31.4.94";
-		logger.info("container's private IP = " + CommonUtils.getTaskContainerPrivateAddress(taskArn));
-		logger.info("container's public IP = " + CommonUtils.getTaskContainerPublicAddress(taskArn));
-		if (host.equals("0.0.0.0")) {
-			host = CommonUtils.getTaskContainerPublicAddress(taskArn);
+		logger.info("container's private IP = " + AWSUtils.getTaskContainerPrivateAddress(taskArn));
+		logger.info("container's public IP = " + AWSUtils.getTaskContainerPublicAddress(taskArn));
+//		if (host.equals("0.0.0.0")) {
+//			host = CommonUtils.getTaskContainerPublicAddress(taskArn);
+//		}
+		if (template.getParent().isSameVPC()) {
+			logger.info("Use private address");
+			host = AWSUtils.getTaskContainerPrivateAddress(taskArn);
+		} else {
+			logger.info("Use public address");
+			host = AWSUtils.getTaskContainerPublicAddress(taskArn);
 		}
 
 		logger.info("Creating slave SSH launcher for " + host + ":" + port);

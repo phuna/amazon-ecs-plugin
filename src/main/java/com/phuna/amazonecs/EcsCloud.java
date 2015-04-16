@@ -38,6 +38,8 @@ public class EcsCloud extends Cloud {
 	private String accessKeyId;
 	private String secretAccessKey;
 	private List<EcsTaskTemplate> templates;
+	private boolean sameVPC;
+	
 	private static AWSCredentials awsCredentials;
 //	private AmazonECSClient ecsClient;
 
@@ -46,45 +48,45 @@ public class EcsCloud extends Cloud {
 	}
 
 	public void setAccessKeyId(String accessKeyId) {
-		logger.warning("*** setAccessKeyId");
 		this.accessKeyId = accessKeyId;
 	}
 
 	public String getSecretAccessKey() {
-		logger.warning("*** getSecretAccessKey");
 		return secretAccessKey;
 	}
 
 	public void setSecretAccessKey(String secretAccessKey) {
-		logger.warning("*** setSecretAccessKey");
 		this.secretAccessKey = secretAccessKey;
 	}
 
 	public List<EcsTaskTemplate> getTemplates() {
-		logger.warning("*** getTemplates");
 		return templates;
 	}
 
 	public void setTemplates(List<EcsTaskTemplate> templates) {
-		logger.warning("*** setTemplates");
 		this.templates = templates;
 	}
 	
+	public boolean isSameVPC() {
+		return sameVPC;
+	}
+
+	public void setSameVPC(boolean sameVPC) {
+		this.sameVPC = sameVPC;
+	}
+
 	public static AWSCredentials getAwsCredentials() {
 		return awsCredentials;
 	}
-	
-//	public AmazonECSClient getEcsClient() {
-//		return ecsClient;
-//	}
 
 	@DataBoundConstructor
 	public EcsCloud(String accessKeyId, String secretAccessKey,
-			List<EcsTaskTemplate> templates, String name) {
+			List<EcsTaskTemplate> templates, String name, boolean sameVPC) {
 		super(name);
 		logger.warning("*** EcsCloud constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
+		this.sameVPC = sameVPC;
 		
 		EcsCloud.awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
 		
@@ -213,7 +215,7 @@ public class EcsCloud extends Cloud {
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
 				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = CommonUtils.getEcsClient();
+			AmazonECSClient client = AWSUtils.getEcsClient();
 			ListContainerInstancesResult result = client.listContainerInstances();
 
 			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());
