@@ -176,5 +176,8 @@ public class AWSUtils {
 		AmazonECSClient client = AWSUtils.getEcsClient();
 		str.setTask(taskArn);
 		client.stopTask(str);
+		
+		// TODO Remove container
+		
 	}
 }

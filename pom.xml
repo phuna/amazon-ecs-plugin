@@ -13,7 +13,7 @@
 	</parent>
 	<groupId>com.phuna</groupId>
 	<artifactId>amazon-ecs-plugin</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>0.1</version>
 	<packaging>hpi</packaging>
 
 	<name>Amazon ECS plugin</name>
@@ -68,10 +68,10 @@
 			<artifactId>durable-task</artifactId>
 			<version>0.5</version>
 		</dependency>
-<!-- 		<dependency>
+		<!-- <dependency>
 			<groupId>com.github.docker-java</groupId>
 			<artifactId>docker-java</artifactId>
-			<version>1.0.1-SNAPSHOT</version>
+			<version>1.1.0</version>
 		</dependency> -->
 		<dependency>
 			<groupId>org.jenkins-ci.plugins</groupId>
