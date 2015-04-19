@@ -26,11 +26,13 @@ import org.kohsuke.stapler.QueryParameter;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.google.common.base.Throwables;
 
-public class EcsCloud extends Cloud {
+public class EcsCloud extends Cloud implements AwsCloud {
 
 	private static final Logger logger = Logger.getLogger(EcsCloud.class
 			.getName());
@@ -39,11 +41,11 @@ public class EcsCloud extends Cloud {
 	private String secretAccessKey;
 	private List<EcsTaskTemplate> templates;
 	private boolean sameVPC;
-	
-	private static AWSCredentials awsCredentials;
+	private AWSCredentials awsCredentials;
 //	private AmazonECSClient ecsClient;
 
 	public String getAccessKeyId() {
+		logger.warning("*** getAccessKeyId, EcsCloud = " + this);
 		return accessKeyId;
 	}
 
@@ -75,20 +77,23 @@ public class EcsCloud extends Cloud {
 		this.sameVPC = sameVPC;
 	}
 
-	public static AWSCredentials getAwsCredentials() {
+	public AWSCredentials getAwsCredentials() {
+		if (awsCredentials == null) {
+			awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
+		}
 		return awsCredentials;
 	}
-
+	
 	@DataBoundConstructor
 	public EcsCloud(String accessKeyId, String secretAccessKey,
 			List<EcsTaskTemplate> templates, String name, boolean sameVPC) {
 		super(name);
-		logger.warning("*** EcsCloud constructor");
+		logger.warning("*** EcsCloud databound constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
 		this.sameVPC = sameVPC;
 		
-		EcsCloud.awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
+		awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
 		
 //		logger.warning("*** Create Ecs Client");
 //		this.ecsClient = Utils.getEcsClient(this.accessKeyId,
@@ -108,7 +113,7 @@ public class EcsCloud extends Cloud {
 	@Override
 	public Collection<PlannedNode> provision(Label label, int excessWorkload) {
 		try {
-
+			logger.warning("*** provision, EcsCloud = " + this);
 			logger.log(Level.INFO, "Asked to provision {0} slave(s) for: {1}",
 					new Object[] { excessWorkload, label });
 
@@ -200,9 +205,45 @@ public class EcsCloud extends Cloud {
 		}
 		return null;
 	}
-
-	public String getMyString() {
-		return "Hello Jenkins";
+	
+	public AmazonECSClient getEcsClient() {
+		AmazonECSClient client = new AmazonECSClient(getAwsCredentials());
+		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
+		if (endpoint == null || "".equals(endpoint)) {
+			endpoint = Constants.AWS_ECS_ENDPOINT;
+		}
+		client.setEndpoint(endpoint);
+		return client;
+	}
+	
+	public static AmazonECSClient getEcsClient(String accessKeyId, String secretAccessKey) {
+		AmazonECSClient client = new AmazonECSClient(new BasicAWSCredentials(accessKeyId, secretAccessKey));
+		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
+		if (endpoint == null || "".equals(endpoint)) {
+			endpoint = Constants.AWS_ECS_ENDPOINT;
+		}
+		client.setEndpoint(endpoint);
+		return client;
+	}
+	
+	public AmazonEC2Client getEc2Client() {
+		AmazonEC2Client client = new AmazonEC2Client(getAwsCredentials());
+		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
+		if (endpoint == null || "".equals(endpoint)) {
+			endpoint = Constants.AWS_EC2_ENDPOINT;
+		}
+		client.setEndpoint(endpoint);
+		return client;
+	}
+	
+	public static AmazonEC2Client getEc2Client(String accessKeyId, String secretAccessKey) {
+		AmazonEC2Client client = new AmazonEC2Client(new BasicAWSCredentials(accessKeyId, secretAccessKey));
+		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
+		if (endpoint == null || "".equals(endpoint)) {
+			endpoint = Constants.AWS_EC2_ENDPOINT;
+		}
+		client.setEndpoint(endpoint);
+		return client;
 	}
 
 	@Extension
@@ -215,7 +256,7 @@ public class EcsCloud extends Cloud {
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
 				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = AWSUtils.getEcsClient();
+			AmazonECSClient client = EcsCloud.getEcsClient(accessKeyId, secretAccessKey);
 			ListContainerInstancesResult result = client.listContainerInstances();
 
 			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());

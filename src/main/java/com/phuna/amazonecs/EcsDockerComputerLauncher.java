@@ -7,6 +7,8 @@ import hudson.slaves.DelegatingComputerLauncher;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.NetworkBinding;
@@ -53,8 +55,10 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		int port = -1;
 		String host = "";
 		
+		AwsCloud cloud = template.getParent();
+		
 		// Wait until container's status becomes RUNNING
-		Container ctn = AWSUtils.waitForContainer(taskArn);
+		Container ctn = AWSUtils.waitForContainer(cloud, taskArn);
 		if (!ctn.getLastStatus().equals("RUNNING")) {
 			throw new RuntimeException("Container takes too long time to start");
 		}
@@ -74,23 +78,23 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		if (host == "" || port == -1) {
 			logger.warning("Failed to connect to the container");
-			AWSUtils.stopTask(taskArn, template.getParent().isSameVPC());
+			AWSUtils.stopTask(cloud, taskArn, template.getParent().isSameVPC());
 			throw new RuntimeException("Cannot determine host/port to SSH into");
 		}
 
 		// host = "54.187.124.238";
 //		host = "172.31.4.94";
-		logger.info("container's private IP = " + AWSUtils.getTaskContainerPrivateAddress(taskArn));
-		logger.info("container's public IP = " + AWSUtils.getTaskContainerPublicAddress(taskArn));
+		logger.info("container's private IP = " + AWSUtils.getTaskContainerPrivateAddress(cloud, taskArn));
+		logger.info("container's public IP = " + AWSUtils.getTaskContainerPublicAddress(cloud, taskArn));
 //		if (host.equals("0.0.0.0")) {
 //			host = CommonUtils.getTaskContainerPublicAddress(taskArn);
 //		}
 		if (template.getParent().isSameVPC()) {
 			logger.info("Use private address");
-			host = AWSUtils.getTaskContainerPrivateAddress(taskArn);
+			host = AWSUtils.getTaskContainerPrivateAddress(cloud, taskArn);
 		} else {
 			logger.info("Use public address");
-			host = AWSUtils.getTaskContainerPublicAddress(taskArn);
+			host = AWSUtils.getTaskContainerPublicAddress(cloud, taskArn);
 		}
 
 		logger.info("Creating slave SSH launcher for " + host + ":" + port);

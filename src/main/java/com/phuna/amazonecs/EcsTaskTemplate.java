@@ -190,7 +190,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		RunTaskRequest request = new RunTaskRequest();
 		request.setTaskDefinition(taskDefinitionArn);
 
-		AmazonECSClient client = AWSUtils.getEcsClient();
+		AmazonECSClient client = getParent().getEcsClient();
 		return client.runTask(request);
 	}
 
