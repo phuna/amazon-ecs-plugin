@@ -13,9 +13,13 @@
 	<f:entry title="${%Secret Access Key}">
 		<f:password field="secretAccessKey"/>
 	</f:entry>
+
+	</f:entry title="${%Amazon ECS Region}">
+		  <f:textbox field="ecsRegionId">
+	</f:entry> 
 	
 	<f:validateButton title="${%Test Connection}"
-		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey" />
+		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey, ecsRegionId" />
 	<f:entry title="${%Same Virtual Private Cloud}">
 		<f:checkbox field="sameVPC" />
 	</f:entry>

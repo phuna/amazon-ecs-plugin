@@ -39,6 +39,7 @@ public class EcsCloud extends Cloud implements AwsCloud {
 
 	private String accessKeyId;
 	private String secretAccessKey;
+        private String clusterRegionId;
 	private List<EcsTaskTemplate> templates;
 	private boolean sameVPC;
 	private AWSCredentials awsCredentials;
@@ -60,6 +61,14 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	public void setSecretAccessKey(String secretAccessKey) {
 		this.secretAccessKey = secretAccessKey;
 	}
+
+        public String getClusterRegionId() {
+	        return clusterRegionId;
+	}
+
+        public void setClusterRegionId(String clusterRegionId) {
+	        this.clusterRegionId = clusterRegionId;
+        }
 
 	public List<EcsTaskTemplate> getTemplates() {
 		return templates;
@@ -85,13 +94,14 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	}
 	
 	@DataBoundConstructor
-	public EcsCloud(String accessKeyId, String secretAccessKey,
+	public EcsCloud(String accessKeyId, String secretAccessKey, String clusterRegionId,
 			List<EcsTaskTemplate> templates, String name, boolean sameVPC) {
 		super(name);
 		logger.warning("*** EcsCloud databound constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
-		this.sameVPC = sameVPC;
+		this.clusterRegionId = clusterRegionId;
+		this.sameVPC = sameVPC;		
 		
 		awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
 		
@@ -104,7 +114,7 @@ public class EcsCloud extends Cloud implements AwsCloud {
 		} else {
 			this.templates = new ArrayList<EcsTaskTemplate>();
 		}
-		for (EcsTaskTemplate template : templates) {
+		for (EcsTaskTemplate template : this.templates) {
 			template.setParent(this);
 		}
 
@@ -208,40 +218,28 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	
 	public AmazonECSClient getEcsClient() {
 		AmazonECSClient client = new AmazonECSClient(getAwsCredentials());
-		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
-			endpoint = Constants.AWS_ECS_ENDPOINT;
-		}
+		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com"
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
-	public static AmazonECSClient getEcsClient(String accessKeyId, String secretAccessKey) {
+    public static AmazonECSClient getEcsClient(String accessKeyId, String secretAccessKey, String clusterRegionId) {
 		AmazonECSClient client = new AmazonECSClient(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
-			endpoint = Constants.AWS_ECS_ENDPOINT;
-		}
+		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com"
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
 	public AmazonEC2Client getEc2Client() {
 		AmazonEC2Client client = new AmazonEC2Client(getAwsCredentials());
-		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
-			endpoint = Constants.AWS_EC2_ENDPOINT;
-		}
+		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com"
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
 	public static AmazonEC2Client getEc2Client(String accessKeyId, String secretAccessKey) {
 		AmazonEC2Client client = new AmazonEC2Client(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
-			endpoint = Constants.AWS_EC2_ENDPOINT;
-		}
+		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com"
 		client.setEndpoint(endpoint);
 		return client;
 	}
@@ -255,8 +253,9 @@ public class EcsCloud extends Cloud implements AwsCloud {
 
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
-				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = EcsCloud.getEcsClient(accessKeyId, secretAccessKey);
+				@QueryParameter String secretAccessKey,
+				@QueryParameter String clusterRegionId) {
+		        AmazonECSClient client = EcsCloud.getEcsClient(accessKeyId, secretAccessKey, clusterRegionId);
 			ListContainerInstancesResult result = client.listContainerInstances();
 
 			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());
