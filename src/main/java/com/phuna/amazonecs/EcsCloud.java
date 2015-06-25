@@ -218,28 +218,28 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	
 	public AmazonECSClient getEcsClient() {
 		AmazonECSClient client = new AmazonECSClient(getAwsCredentials());
-		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com"
+		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com";
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
     public static AmazonECSClient getEcsClient(String accessKeyId, String secretAccessKey, String clusterRegionId) {
 		AmazonECSClient client = new AmazonECSClient(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com"
+		String endpoint = "https://ecs." + clusterRegionId + ".amazonaws.com";
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
 	public AmazonEC2Client getEc2Client() {
 		AmazonEC2Client client = new AmazonEC2Client(getAwsCredentials());
-		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com"
+		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com";
 		client.setEndpoint(endpoint);
 		return client;
 	}
 	
-	public static AmazonEC2Client getEc2Client(String accessKeyId, String secretAccessKey) {
+    public static AmazonEC2Client getEc2Client(String accessKeyId, String secretAccessKey, String clusterRegionId) {
 		AmazonEC2Client client = new AmazonEC2Client(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com"
+		String endpoint = "https://ec2." + clusterRegionId + ".amazonaws.com";
 		client.setEndpoint(endpoint);
 		return client;
 	}
