@@ -49,23 +49,33 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	private String taskDefinitionArn;
 	private String labelString;
 	private EcsCloud parent;
-	private String remoteFS; // Location on slave used as workspace for Jenkins' slave
+	private String remoteFS; // Location on slave used as workspace for Jenkins'
+								// slave
 	// private AmazonECSClient ecsClient;
+	private String clusterName;
 
 	/**
 	 * The id of the credentials to use.
 	 */
 	private String credentialsId;
 
+	public String getClusterName() {
+		return clusterName;
+	}
+
+	public void setClusterName(String clusterName) {
+		this.clusterName = clusterName;
+	}
+
 	@DataBoundConstructor
 	public EcsTaskTemplate(String taskDefinitionArn, String labelString,
-			String remoteFS,
-			String credentialsId) {
+			String remoteFS, String credentialsId, String clusterName) {
 		this.taskDefinitionArn = taskDefinitionArn;
 		this.labelString = labelString;
 		this.credentialsId = credentialsId;
-		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins" : remoteFS;
-		
+		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins"
+				: remoteFS;
+		this.clusterName = clusterName;
 	}
 
 	public String getTaskDefinitionArn() {
@@ -171,12 +181,12 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		// catch(Exception ex) {
 		// logger.warning("Error fetching name of cloud");
 		// }
-		
+
 		Task t = result.getTasks().get(0);
 		Container ctn = t.getContainers().get(0);
-		logger.info("taskArn = " + ctn.getTaskArn() + ", containerArn = " + ctn.getContainerArn() + ", name = " + ctn.getName());
-		return new EcsDockerSlave(this,
-				t.getTaskArn(), // slaveName,
+		logger.info("taskArn = " + ctn.getTaskArn() + ", containerArn = "
+				+ ctn.getContainerArn() + ", name = " + ctn.getName());
+		return new EcsDockerSlave(this, t.getTaskArn(), // slaveName,
 				ctn.getContainerArn(), // nodeDescription,
 				this.remoteFS, // remoteFs,
 				numExecutors, // numExecutors,
@@ -184,13 +194,20 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	}
 
 	public RunTaskResult provisionNew() {
-		// logger.warning("parent = " + parent);
+		logger.warning("cluster = " + clusterName);
 
 		// Use Amazon ECS' default scheduler
 		RunTaskRequest request = new RunTaskRequest();
+		if (!Strings.isNullOrEmpty(clusterName)) {
+			request.setCluster(clusterName);
+		}
+		logger.warning("Running task arn="+taskDefinitionArn+" on Cluster :"+request.getCluster());
 		request.setTaskDefinition(taskDefinitionArn);
 
 		AmazonECSClient client = getParent().getEcsClient();
+		RunTaskResult result = client.runTask(request);
+		logger.warning("Run Task Result : Failures : "+result.getFailures().size()+" tasks="+result.getTasks().size()+" RunTaskResult="+result.toString());
+		
 		return client.runTask(request);
 	}
 

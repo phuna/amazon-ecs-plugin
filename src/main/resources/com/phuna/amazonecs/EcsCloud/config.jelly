@@ -3,19 +3,27 @@
 	xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
 	xmlns:c="/lib/credentials">
 	
-	<f:entry title="${%Name}">
+	<f:entry title="${%Name}" description="${%Cloud Name}">
 		<f:textbox field="name" />
 	</f:entry>
 	
-	<f:entry title="${%Access Key ID}">
+	<f:entry title="${%Access Key ID}" description="${%Leave blank if you want to use default aws credentials chain}">
 		<f:textbox field="accessKeyId" />
 	</f:entry>
-	<f:entry title="${%Secret Access Key}">
+	<f:entry title="${%Secret Access Key}" description="${%Leave blank if you want to use default aws credentials chain}">
 		<f:password field="secretAccessKey"/>
 	</f:entry>
 	
+	<f:entry title="${%EC2 End Point}" description="${%Default is https://ec2.eu-west-1.amazonaws.com}">
+		<f:textbox field="ec2EndPoint"/>
+	</f:entry>
+	
+	<f:entry title="${%ECS End Point}" description="${%Default is https://ecs.eu-west-1.amazonaws.com}">
+		<f:textbox field="ecsEndPoint"/>
+	</f:entry>
+	
 	<f:validateButton title="${%Test Connection}"
-		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey" />
+		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey,ecsEndPoint" />
 	<f:entry title="${%Same Virtual Private Cloud}">
 		<f:checkbox field="sameVPC" />
 	</f:entry>

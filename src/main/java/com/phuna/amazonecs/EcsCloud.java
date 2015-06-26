@@ -27,9 +27,10 @@ import org.kohsuke.stapler.QueryParameter;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.model.ListClustersResult;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 
 public class EcsCloud extends Cloud implements AwsCloud {
@@ -39,13 +40,33 @@ public class EcsCloud extends Cloud implements AwsCloud {
 
 	private String accessKeyId;
 	private String secretAccessKey;
+	private String ec2EndPoint;
+	private String ecsEndPoint;
+
 	private List<EcsTaskTemplate> templates;
 	private boolean sameVPC;
 	private AWSCredentials awsCredentials;
-//	private AmazonECSClient ecsClient;
+
+	
+	
+	
+	public String getEcsEndPoint() {
+		return ecsEndPoint;
+	}
+
+	public void setEcsEndPoint(String ecsEndPoint) {
+		this.ecsEndPoint = ecsEndPoint;
+	}
+
+	public String getEc2EndPoint() {
+		return ec2EndPoint;
+	}
+
+	public void setEc2EndPoint(String ec2EndPoint) {
+		this.ec2EndPoint = ec2EndPoint;
+	}
 
 	public String getAccessKeyId() {
-		logger.warning("*** getAccessKeyId, EcsCloud = " + this);
 		return accessKeyId;
 	}
 
@@ -68,7 +89,7 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	public void setTemplates(List<EcsTaskTemplate> templates) {
 		this.templates = templates;
 	}
-	
+
 	public boolean isSameVPC() {
 		return sameVPC;
 	}
@@ -78,27 +99,43 @@ public class EcsCloud extends Cloud implements AwsCloud {
 	}
 
 	public AWSCredentials getAwsCredentials() {
-		if (awsCredentials == null) {
-			awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
+		if (Strings.isNullOrEmpty(accessKeyId)
+				|| Strings.isNullOrEmpty(secretAccessKey)) {
+			// return null so that we can use the default credential chain.
+			awsCredentials = null;
+		} else {
+			if (awsCredentials == null) {
+				awsCredentials = new BasicAWSCredentials(accessKeyId,
+						secretAccessKey);
+			}
 		}
 		return awsCredentials;
 	}
-	
+
 	@DataBoundConstructor
 	public EcsCloud(String accessKeyId, String secretAccessKey,
+			String ec2EndPoint, String ecsEndPoint,
 			List<EcsTaskTemplate> templates, String name, boolean sameVPC) {
 		super(name);
 		logger.warning("*** EcsCloud databound constructor");
 		this.accessKeyId = accessKeyId;
 		this.secretAccessKey = secretAccessKey;
 		this.sameVPC = sameVPC;
+		this.ec2EndPoint = ec2EndPoint;
+		this.ecsEndPoint = ecsEndPoint;
 		
-		awsCredentials = new BasicAWSCredentials(accessKeyId, secretAccessKey);
-		
-//		logger.warning("*** Create Ecs Client");
-//		this.ecsClient = Utils.getEcsClient(this.accessKeyId,
-//				this.secretAccessKey);
-		
+		if (Strings.isNullOrEmpty(accessKeyId)
+				|| Strings.isNullOrEmpty(secretAccessKey)) {
+			// explicitly set the awsCredentials to null
+			this.awsCredentials = null;
+		} else {
+			awsCredentials = new BasicAWSCredentials(accessKeyId,
+					secretAccessKey);
+		}
+		// logger.warning("*** Create Ecs Client");
+		// this.ecsClient = Utils.getEcsClient(this.accessKeyId,
+		// this.secretAccessKey);
+
 		if (templates != null) {
 			this.templates = templates;
 		} else {
@@ -205,44 +242,85 @@ public class EcsCloud extends Cloud implements AwsCloud {
 		}
 		return null;
 	}
-	
+
 	public AmazonECSClient getEcsClient() {
-		AmazonECSClient client = new AmazonECSClient(getAwsCredentials());
-		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
+		AmazonECSClient client = getAwsCredentials() == null ? new AmazonECSClient()
+				: new AmazonECSClient(getAwsCredentials());
+
+		
+		String endpoint = Strings.isNullOrEmpty(this.getEcsEndPoint()) ? System
+				.getenv("AWS_ECS_ENDPOINT") : this.getEcsEndPoint();
+
+		if (Strings.isNullOrEmpty(endpoint)) {
 			endpoint = Constants.AWS_ECS_ENDPOINT;
 		}
 		client.setEndpoint(endpoint);
+		logger.log(Level.SEVERE, "AWS ECS Endpoint: " + endpoint);
+
 		return client;
 	}
-	
-	public static AmazonECSClient getEcsClient(String accessKeyId, String secretAccessKey) {
-		AmazonECSClient client = new AmazonECSClient(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = System.getenv("AWS_ECS_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
+
+	public static AmazonECSClient getEcsClient(String accessKeyId,
+			String secretAccessKey, String ecsEndPoint) {
+		AmazonECSClient client;
+		if (Strings.isNullOrEmpty(accessKeyId)
+				|| Strings.isNullOrEmpty(secretAccessKey)) {
+			logger.log(Level.SEVERE, "No Access Key provided");
+			client = new AmazonECSClient();
+		} else {
+			client = new AmazonECSClient(new BasicAWSCredentials(accessKeyId,
+					secretAccessKey));
+		}
+		String endpoint = Strings.isNullOrEmpty(ecsEndPoint) ? System
+				.getenv("AWS_ECS_ENDPOINT") : ecsEndPoint;
+
+		if (Strings.isNullOrEmpty(endpoint)) {
 			endpoint = Constants.AWS_ECS_ENDPOINT;
 		}
 		client.setEndpoint(endpoint);
+		logger.log(Level.SEVERE, "AWS ECS Endpoint: " + endpoint);
+
 		return client;
 	}
-	
+
 	public AmazonEC2Client getEc2Client() {
-		AmazonEC2Client client = new AmazonEC2Client(getAwsCredentials());
-		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
+		AmazonEC2Client client = getAwsCredentials() == null ? new AmazonEC2Client()
+				: new AmazonEC2Client(getAwsCredentials());
+		
+		String endpoint = Strings.isNullOrEmpty(this.getEc2EndPoint()) ? System
+				.getenv("AWS_EC2_ENDPOINT") : this.getEc2EndPoint();
+
+		if (Strings.isNullOrEmpty(endpoint)) {
 			endpoint = Constants.AWS_EC2_ENDPOINT;
 		}
 		client.setEndpoint(endpoint);
+		logger.log(Level.SEVERE, "AWS EC2 Endpoint: " + endpoint);
+
 		return client;
 	}
-	
-	public static AmazonEC2Client getEc2Client(String accessKeyId, String secretAccessKey) {
-		AmazonEC2Client client = new AmazonEC2Client(new BasicAWSCredentials(accessKeyId, secretAccessKey));
-		String endpoint = System.getenv("AWS_EC2_ENDPOINT");
-		if (endpoint == null || "".equals(endpoint)) {
+
+	public static AmazonEC2Client getEc2Client(String accessKeyId,
+			String secretAccessKey, String ec2EndPoint) {
+		AmazonEC2Client client;
+
+		if (Strings.isNullOrEmpty(accessKeyId)
+				|| Strings.isNullOrEmpty(secretAccessKey)) {
+			logger.log(Level.SEVERE, "No Access Key provided");
+			client = new AmazonEC2Client();
+		} else {
+			client = new AmazonEC2Client(new BasicAWSCredentials(accessKeyId,
+					secretAccessKey));
+		}
+
+		String endpoint = Strings.isNullOrEmpty(ec2EndPoint) ? System
+				.getenv("AWS_EC2_ENDPOINT") : ec2EndPoint;
+
+		if (Strings.isNullOrEmpty(endpoint)) {
 			endpoint = Constants.AWS_EC2_ENDPOINT;
 		}
 		client.setEndpoint(endpoint);
+		logger.log(Level.SEVERE, "AWS EC2 Endpoint: " + endpoint);
+
 		return client;
 	}
 
@@ -255,11 +333,26 @@ public class EcsCloud extends Cloud implements AwsCloud {
 
 		public FormValidation doTestConnection(
 				@QueryParameter String accessKeyId,
-				@QueryParameter String secretAccessKey) {
-			AmazonECSClient client = EcsCloud.getEcsClient(accessKeyId, secretAccessKey);
-			ListContainerInstancesResult result = client.listContainerInstances();
+				@QueryParameter String secretAccessKey,
+				@QueryParameter String ecsEndPoint) {
 
-			return FormValidation.ok("Success. Number of container instances: " + result.getContainerInstanceArns().size());
+			if (accessKeyId.isEmpty() || secretAccessKey.isEmpty()) {
+				logger.warning("No Credentials provided, using  DefaultAWSCredentialsProviderChain ");
+
+			}
+			logger.warning("ec2EndPoint=" + ecsEndPoint);
+			ecsEndPoint = ecsEndPoint == null ? "" : ecsEndPoint;
+			AmazonECSClient client = EcsCloud.getEcsClient(accessKeyId,
+					secretAccessKey, ecsEndPoint);
+			ListClustersResult clusters = client.listClusters();
+			logger.log(Level.SEVERE, "Clusters: "
+					+ clusters.getClusterArns().size() + " clusters:"
+					+ clusters);
+			ListContainerInstancesResult result = client
+					.listContainerInstances();
+
+			return FormValidation.ok("Success. Number of container instances: "
+					+ result.getContainerInstanceArns().size());
 		}
 		//
 		// public ListBoxModel doFillCredentialsIdItems(@AncestorInPath

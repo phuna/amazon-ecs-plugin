@@ -42,7 +42,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 			InterruptedException {
 		toComputer().disconnect(null);
 		logger.info("Stop task " + taskArn);
-		AWSUtils.stopTask(template.getParent(), taskArn, template.getParent().isSameVPC());
+		AWSUtils.stopTask(template.getParent(), taskArn,template.getClusterName(), template.getParent().isSameVPC());
 	}
 
 }

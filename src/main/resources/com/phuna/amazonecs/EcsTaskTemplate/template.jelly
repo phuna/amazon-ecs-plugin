@@ -3,7 +3,9 @@
 	<f:entry title="${%Task definition Arn}" field="taskDefinitionArn">
 		<f:textbox />
 	</f:entry>
-
+	<f:entry title="${%Cluster Name}" description="${%Cluster Name where this task should run. Leave blank for default}">
+		<f:textbox field="clusterName" />
+	</f:entry>
 	<f:entry title="${%Labels}" field="labelString">
 		<f:textbox />
 	</f:entry>
