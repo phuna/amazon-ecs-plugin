@@ -14,12 +14,12 @@
 		<f:password field="secretAccessKey"/>
 	</f:entry>
 
-	<f:entry title="${%Amazon Cluster Region}">
+	<f:entry title="${%Cluster Region Id}">
 		  <f:textbox field="clusterRegionId"/>
 	</f:entry> 
 	
 	<f:validateButton title="${%Test Connection}"
-		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey, clusterRegionId" />
+		progress="${%Testing...}" method="testConnection" with="accessKeyId,secretAccessKey,clusterRegionId" />
 	<f:entry title="${%Same Virtual Private Cloud}">
 		<f:checkbox field="sameVPC" />
 	</f:entry>
