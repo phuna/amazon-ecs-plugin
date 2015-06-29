@@ -208,7 +208,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		RunTaskResult result = client.runTask(request);
 		logger.warning("Run Task Result : Failures : "+result.getFailures().size()+" tasks="+result.getTasks().size()+" RunTaskResult="+result.toString());
 		
-		return client.runTask(request);
+		return result;
 	}
 
 	@Override

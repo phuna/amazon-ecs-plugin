@@ -130,7 +130,7 @@ public class AWSUtils {
 				.getContainerInstanceArn();
 
 		DescribeContainerInstancesResult dcirr = AWSUtils
-				.describeContainerInstances(cloud, containerInstanceArn);
+				.describeContainerInstances(cloud, cluster, containerInstanceArn);
 		if (dcirr.getContainerInstances().size() == 0) {
 			throw new RuntimeException(
 					"No container instances found for task ARN: " + taskArn);
