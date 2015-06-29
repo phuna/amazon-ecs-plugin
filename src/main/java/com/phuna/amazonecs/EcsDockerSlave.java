@@ -19,17 +19,20 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 
 	private EcsTaskTemplate template;
 	private String taskArn;
+        private int buildTimeout;
 
 	public EcsDockerSlave(EcsTaskTemplate template, String taskArn,
-			String nodeDescription, String remoteFS, int numExecutors,
-			Mode mode, String labelString, ComputerLauncher launcher,
-			RetentionStrategy retentionStrategy,
-			List<? extends NodeProperty<?>> nodeProperties)
+			      String nodeDescription, String remoteFS, int numExecutors,
+			      Mode mode, String labelString, ComputerLauncher launcher,
+			      RetentionStrategy retentionStrategy,
+			      List<? extends NodeProperty<?>> nodeProperties,
+			      int buildTimeout)
 			throws FormException, IOException {
 		super(taskArn, nodeDescription, remoteFS, numExecutors, mode,
 				labelString, launcher, retentionStrategy, nodeProperties);
 		this.template = template;
 		this.taskArn = taskArn;
+		this.buildTimeout = buildTimeout;
 	}
 
 	@Override
@@ -42,7 +45,7 @@ public class EcsDockerSlave extends AbstractCloudSlave {
 			InterruptedException {
 		toComputer().disconnect(null);
 		logger.info("Stop task " + taskArn);
-		AWSUtils.stopTask(template.getParent(), taskArn, template.getParent().isSameVPC());
+		AWSUtils.stopTask(template.getParent(), taskArn, template.getParent().isSameVPC(), buildTimeout);
 	}
 
 }

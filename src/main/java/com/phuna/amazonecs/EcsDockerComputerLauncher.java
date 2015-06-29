@@ -24,18 +24,21 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 	// private EcsTaskTemplate template;
 
 	protected EcsDockerComputerLauncher(EcsTaskTemplate template,
-			RunTaskResult runTaskResult) {
-		super(makeLauncher(template, runTaskResult));
+					    RunTaskResult runTaskResult,
+					    int buildTimeout) {
+	    super(makeLauncher(template, runTaskResult, buildTimeout));
 	}
 
 	private static ComputerLauncher makeLauncher(EcsTaskTemplate template,
-			RunTaskResult runTaskResult) {
-		SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template);
+						     RunTaskResult runTaskResult,
+						     int buildTimeout) {
+	    SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template, buildTimeout);
 		return new RetryingComputerLauncher(sshLauncher);
 	}
 
 	private static SSHLauncher getSSHLauncher(RunTaskResult runTaskResult,
-			EcsTaskTemplate template) {
+						  EcsTaskTemplate template,
+						  int buildTimeout) {
 		Preconditions.checkNotNull(template);
 
 //		AmazonECSClient client = CommonUtils.getEcsClient();
@@ -58,7 +61,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		AwsCloud cloud = template.getParent();
 		
 		// Wait until container's status becomes RUNNING
-		Container ctn = AWSUtils.waitForContainer(cloud, taskArn);
+		Container ctn = AWSUtils.waitForContainer(cloud, taskArn, buildTimeout);
 		if (!ctn.getLastStatus().equals("RUNNING")) {
 			throw new RuntimeException("Container takes too long time to start");
 		}
@@ -78,7 +81,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		if (host == "" || port == -1) {
 			logger.warning("Failed to connect to the container");
-			AWSUtils.stopTask(cloud, taskArn, template.getParent().isSameVPC());
+			AWSUtils.stopTask(cloud, taskArn, template.getParent().isSameVPC(), buildTimeout);
 			throw new RuntimeException("Cannot determine host/port to SSH into");
 		}
 
@@ -99,7 +102,9 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		logger.info("Creating slave SSH launcher for " + host + ":" + port);
 
-		CommonUtils.waitForPort(host, port);
+		if (!CommonUtils.waitForPort(host, port, buildTimeout)) {
+		    throw new RuntimeException("Port took too long to become available");
+		}
 
 		StandardUsernameCredentials credentials = SSHLauncher
 				.lookupSystemCredentials(template.getCredentialsId());

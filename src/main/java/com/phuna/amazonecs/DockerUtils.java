@@ -18,8 +18,8 @@ public class DockerUtils {
 				.build();
 	}
 	
-	public static boolean waitForContainerExit(DockerClient dockerClient, String containerId) {
-		for (int i = 0; i < Constants.RETRIES; i++) {
+        public static boolean waitForContainerExit(DockerClient dockerClient, String containerId, int buildTimeout) {
+	    while (buildTimeout > 0) {
 			InspectContainerResponse r = dockerClient.inspectContainerCmd(containerId).exec();
 			if (!r.getState().isRunning()) {
 				return true;
@@ -30,6 +30,7 @@ public class DockerUtils {
 			} catch (InterruptedException e) {
 				// no-op
 			}
+			buildTimeout -= Constants.WAIT_TIME_MS;
 		}
 		return false;
 	}

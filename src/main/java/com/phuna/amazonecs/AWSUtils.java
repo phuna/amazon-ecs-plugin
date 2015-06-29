@@ -72,9 +72,9 @@ public class AWSUtils {
 	// }
 
 	public static Container waitForContainer(AwsCloud cloud,
-			String taskArn) {
+						 String taskArn,
+						 int buildTimeout) {
 		Container ctn = null;
-		int i = 0;
 		do {
 			DescribeTasksResult dtrr = AWSUtils.describeTasks(cloud,
 					taskArn);
@@ -93,8 +93,8 @@ public class AWSUtils {
 			} catch (InterruptedException e) {
 				// No-op
 			}
-			i++;
-		} while (i < Constants.RETRIES);
+			buildTimeout -= Constants.WAIT_TIME_MS;
+		} while (buildTimeout > 0);
 		return ctn;
 	}
 
@@ -218,7 +218,7 @@ public class AWSUtils {
 		}
 	}
 
-	public static void stopTask(AwsCloud cloud, String taskArn, boolean sameVPC) {
+        public static void stopTask(AwsCloud cloud, String taskArn, boolean sameVPC, int buildTimeout) {
 		String host = "";
 		if (sameVPC) {
 			host = AWSUtils.getTaskContainerPrivateAddress(cloud, taskArn);
@@ -254,7 +254,9 @@ public class AWSUtils {
 			logger.info("Found container for task: task = " + taskArn
 					+ ", container ID = " + ctn.getId()
 					+ ", container status = " + ctn.getStatus());
-			DockerUtils.waitForContainerExit(dockerClient, ctn.getId());
+			if (!DockerUtils.waitForContainerExit(dockerClient, ctn.getId(), buildTimeout)) {
+			    logger.warning("Container did not stop peacefully, removing with force");
+			}
 			dockerClient.removeContainerCmd(ctn.getId()).withForce().exec();
 			logger.info("Container removed");
 		} else {

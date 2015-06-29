@@ -51,6 +51,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	private EcsCloud parent;
 	private String remoteFS; // Location on slave used as workspace for Jenkins' slave
 	// private AmazonECSClient ecsClient;
+        private int buildTimeout;
 
 	/**
 	 * The id of the credentials to use.
@@ -59,12 +60,15 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 
 	@DataBoundConstructor
 	public EcsTaskTemplate(String taskDefinitionArn, String labelString,
-			String remoteFS,
-			String credentialsId) {
+			       String remoteFS,
+			       String credentialsId,
+			       String buildTimeout) {
 		this.taskDefinitionArn = taskDefinitionArn;
 		this.labelString = labelString;
 		this.credentialsId = credentialsId;
 		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins" : remoteFS;
+		this.buildTimeout = Integer.parseInt(buildTimeout) * 1000;
+		
 		
 	}
 
@@ -112,6 +116,14 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		this.remoteFS = remoteFS;
 	}
 
+        public int getBuildTimeout() {
+	        return buildTimeout;
+        }
+
+        public void setBuildTimeout(int buildTimeout) {
+	        this.buildTimeout = buildTimeout;
+        }
+
 	public int getSSHLaunchTimeoutMinutes() {
 		// TODO Investigate about this later
 		return 1;
@@ -150,7 +162,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 			throw new RuntimeException("Task launched but no container found");
 		}
 
-		ComputerLauncher launcher = new EcsDockerComputerLauncher(this, result);
+		ComputerLauncher launcher = new EcsDockerComputerLauncher(this, result, buildTimeout);
 
 		// Build a description up:
 		// String nodeDescription = "Docker Node [" + image + " on ";
@@ -180,7 +192,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 				ctn.getContainerArn(), // nodeDescription,
 				this.remoteFS, // remoteFs,
 				numExecutors, // numExecutors,
-				mode, labelString, launcher, retentionStrategy, nodeProperties);
+			        mode, labelString, launcher, retentionStrategy, nodeProperties, buildTimeout);
 	}
 
 	public RunTaskResult provisionNew() {
