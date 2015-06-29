@@ -25,20 +25,20 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 	protected EcsDockerComputerLauncher(EcsTaskTemplate template,
 					    RunTaskResult runTaskResult,
-					    int buildTimeout) {
-	    super(makeLauncher(template, runTaskResult, buildTimeout));
+					    int containerStartTimeout) {
+	    super(makeLauncher(template, runTaskResult, containerStartTimeout));
 	}
 
 	private static ComputerLauncher makeLauncher(EcsTaskTemplate template,
 						     RunTaskResult runTaskResult,
-						     int buildTimeout) {
-	    SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template, buildTimeout);
+						     int containerStartTimeout) {
+	    SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template, containerStartTimeout);
 		return new RetryingComputerLauncher(sshLauncher);
 	}
 
 	private static SSHLauncher getSSHLauncher(RunTaskResult runTaskResult,
 						  EcsTaskTemplate template,
-						  int buildTimeout) {
+						  int containerStartTimeout) {
 		Preconditions.checkNotNull(template);
 
 //		AmazonECSClient client = CommonUtils.getEcsClient();
@@ -61,7 +61,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 		AwsCloud cloud = template.getParent();
 		
 		// Wait until container's status becomes RUNNING
-		Container ctn = AWSUtils.waitForContainer(cloud, taskArn, buildTimeout);
+		Container ctn = AWSUtils.waitForContainer(cloud, taskArn, containerStartTimeout);
 		if (!ctn.getLastStatus().equals("RUNNING")) {
 			throw new RuntimeException("Container takes too long time to start");
 		}
@@ -81,7 +81,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		if (host == "" || port == -1) {
 			logger.warning("Failed to connect to the container");
-			AWSUtils.stopTask(cloud, taskArn, template.getParent().isSameVPC(), buildTimeout);
+			AWSUtils.stopTask(cloud, taskArn, template.getParent().isSameVPC(), containerStartTimeout);
 			throw new RuntimeException("Cannot determine host/port to SSH into");
 		}
 
@@ -102,7 +102,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 
 		logger.info("Creating slave SSH launcher for " + host + ":" + port);
 
-		if (!CommonUtils.waitForPort(host, port, buildTimeout)) {
+		if (!CommonUtils.waitForPort(host, port, containerStartTimeout)) {
 		    throw new RuntimeException("Port took too long to become available");
 		}
 

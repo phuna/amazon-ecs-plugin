@@ -51,7 +51,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	private EcsCloud parent;
 	private String remoteFS; // Location on slave used as workspace for Jenkins' slave
 	// private AmazonECSClient ecsClient;
-        private int buildTimeout;
+        private int containerStartTimeout;
 
 	/**
 	 * The id of the credentials to use.
@@ -62,12 +62,12 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	public EcsTaskTemplate(String taskDefinitionArn, String labelString,
 			       String remoteFS,
 			       String credentialsId,
-			       String buildTimeout) {
+			       String containerStartTimeout) {
 		this.taskDefinitionArn = taskDefinitionArn;
 		this.labelString = labelString;
 		this.credentialsId = credentialsId;
 		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins" : remoteFS;
-		this.buildTimeout = Integer.parseInt(buildTimeout) * 1000;
+		this.containerStartTimeout = Integer.parseInt(containerStartTimeout) * 1000;
 		
 		
 	}
@@ -117,11 +117,11 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 	}
 
         public int getBuildTimeout() {
-	        return buildTimeout;
+	        return containerStartTimeout;
         }
 
-        public void setBuildTimeout(int buildTimeout) {
-	        this.buildTimeout = buildTimeout;
+        public void setBuildTimeout(int containerStartTimeout) {
+	        this.containerStartTimeout = containerStartTimeout;
         }
 
 	public int getSSHLaunchTimeoutMinutes() {
@@ -162,7 +162,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 			throw new RuntimeException("Task launched but no container found");
 		}
 
-		ComputerLauncher launcher = new EcsDockerComputerLauncher(this, result, buildTimeout);
+		ComputerLauncher launcher = new EcsDockerComputerLauncher(this, result, containerStartTimeout);
 
 		// Build a description up:
 		// String nodeDescription = "Docker Node [" + image + " on ";
@@ -192,7 +192,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 				ctn.getContainerArn(), // nodeDescription,
 				this.remoteFS, // remoteFs,
 				numExecutors, // numExecutors,
-			        mode, labelString, launcher, retentionStrategy, nodeProperties, buildTimeout);
+			        mode, labelString, launcher, retentionStrategy, nodeProperties, containerStartTimeout);
 	}
 
 	public RunTaskResult provisionNew() {

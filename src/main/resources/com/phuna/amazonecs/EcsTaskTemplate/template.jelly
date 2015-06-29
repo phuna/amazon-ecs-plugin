@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-	<f:entry title="${%Task definition Arn}" field="taskDefinitionArn">
+	<f:entry title="${%Task definition ARN}" field="taskDefinitionArn">
 		<f:textbox />
 	</f:entry>
 
@@ -15,7 +15,7 @@
 	<f:entry title="${%Credentials}" field="credentialsId">
 		<c:select />
 	</f:entry>
-	<f:entry title="${%Container Build Timeout (seconds)}" field="buildTimeout">
+	<f:entry title="${%Container Start Timeout (seconds)}" field="containerStartTimeout">
 		 <f:textbox />
 	</f:entry>
 

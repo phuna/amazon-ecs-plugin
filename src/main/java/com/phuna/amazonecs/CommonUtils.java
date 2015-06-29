@@ -32,8 +32,8 @@ public class CommonUtils {
 		return available;
 	}
 
-        public static boolean waitForPort(String host, int port, int buildTimeout) {
-     	        while (buildTimeout > 0) {
+        public static boolean waitForPort(String host, int port, int containerStartTimeout) {
+     	        while (containerStartTimeout > 0) {
 			if (isPortAvailable(host, port))
 				return true;
 
@@ -42,7 +42,7 @@ public class CommonUtils {
 			} catch (InterruptedException e) {
 				// no-op
 			}
-			buildTimeout -= Constants.WAIT_TIME_MS;
+			containerStartTimeout -= Constants.WAIT_TIME_MS;
 		}
 		return false;
 	}
