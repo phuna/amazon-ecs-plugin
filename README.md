@@ -7,7 +7,7 @@ Use Amazon ECS plugin to dynamically provision a slave on Amazon ECS, run a sing
 
 Configuration
 ------------------
- ### Global
+### Global
 - On your configuration page, scroll down and click 'Add a New Cloud', and then click 'Amazon ECS'
 - Give the cloud a name, and input your Amazon Key Id and Secret Access Key, and the region in which your cluster is running.
   - Right now, each cloud only supports clusters in one region, but could easily be extended to support clusters in multiple regions.
