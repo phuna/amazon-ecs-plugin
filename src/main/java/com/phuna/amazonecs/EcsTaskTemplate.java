@@ -67,7 +67,7 @@ public class EcsTaskTemplate implements Describable<EcsTaskTemplate> {
 		this.labelString = labelString;
 		this.credentialsId = credentialsId;
 		this.remoteFS = Strings.isNullOrEmpty(remoteFS) ? "/home/jenkins" : remoteFS;
-		this.containerStartTimeout = Integer.parseInt(containerStartTimeout);
+		this.containerStartTimeout = String.isNullOrEmpty(containerStartTimeout) ? Constants.DEFAULT_CONTAINER_TIMEOUT : Integer.parseInt(containerStartTimeout);
 		
 		
 	}
