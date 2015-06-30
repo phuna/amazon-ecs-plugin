@@ -32,7 +32,7 @@ public class EcsDockerComputerLauncher extends DelegatingComputerLauncher {
 	private static ComputerLauncher makeLauncher(EcsTaskTemplate template,
 						     RunTaskResult runTaskResult,
 						     int containerStartTimeout) {
-	    SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template, containerStartTimeout);
+	        SSHLauncher sshLauncher = getSSHLauncher(runTaskResult, template, containerStartTimeout);
 		return new RetryingComputerLauncher(sshLauncher);
 	}
 

@@ -17,20 +17,21 @@ public class DockerUtils {
 				.withDockerCmdExecFactory(new DockerCmdExecFactoryImpl())
 				.build();
 	}
-	
+
         public static boolean waitForContainerExit(DockerClient dockerClient, String containerId, int containerStartTimeout) {
-	    while (containerStartTimeout > 0) {
+	    int containerStopTimeout = containerStartTimeout / 2; //Docker container should take shorter amount of time to stop
+	    while (containerStopTimeout > 0) {
 			InspectContainerResponse r = dockerClient.inspectContainerCmd(containerId).exec();
 			if (!r.getState().isRunning()) {
 				return true;
 			}
 			
 			try {
-				Thread.sleep(Constants.WAIT_TIME_MS);
+				Thread.sleep(Constants.WAIT_TIME_S);
 			} catch (InterruptedException e) {
 				// no-op
 			}
-			containerStartTimeout -= Constants.WAIT_TIME_MS;
+			containerStopTimeout -= Constants.WAIT_TIME_S;
 		}
 		return false;
 	}
