@@ -38,11 +38,11 @@ public class CommonUtils {
 				return true;
 
 			try {
-				Thread.sleep(Constants.WAIT_TIME_S);
+				Thread.sleep(Constants.WAIT_TIME_MS);
 			} catch (InterruptedException e) {
 				// no-op
 			}
-			containerStartTimeout -= Constants.WAIT_TIME_S;
+			containerStartTimeout -= Constants.WAIT_TIME_MS;
 		}
 		return false;
 	}

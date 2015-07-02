@@ -89,11 +89,11 @@ public class AWSUtils {
 			}
 			logger.info("Wait for container's RUNNING");
 			try {
-				Thread.sleep(Constants.WAIT_TIME_S);
+				Thread.sleep(Constants.WAIT_TIME_MS);
 			} catch (InterruptedException e) {
 				// No-op
 			}
-			containerStartTimeout -= Constants.WAIT_TIME_S;
+			containerStartTimeout -= Constants.WAIT_TIME_MS;
 		} while (containerStartTimeout > 0);
 		return ctn;
 	}

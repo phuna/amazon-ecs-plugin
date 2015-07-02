@@ -27,11 +27,11 @@ public class DockerUtils {
 			}
 			
 			try {
-				Thread.sleep(Constants.WAIT_TIME_S);
+				Thread.sleep(Constants.WAIT_TIME_MS);
 			} catch (InterruptedException e) {
 				// no-op
 			}
-			containerStopTimeout -= Constants.WAIT_TIME_S;
+			containerStopTimeout -= Constants.WAIT_TIME_MS;
 		}
 		return false;
 	}
